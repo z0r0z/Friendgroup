@@ -1,2 +1,2 @@
-Tester:test(string) (runs: 256, μ: 63252, ~: 69216)
-TesterTest:testTest() (gas: 27621)
+FriendGroupTest:testDeployFG() (gas: 783238)
+FriendGroupTest:testSharesBalance() (gas: 6187)

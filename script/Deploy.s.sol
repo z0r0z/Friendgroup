@@ -2,12 +2,12 @@
 pragma solidity ^0.8.19;
 
 import {Script} from "@forge/Script.sol";
-import {Tester} from "src/Tester.sol";
+import {FriendGroup} from "src/FriendGroup.sol";
 
 contract Deploy is Script {
-    function run() public payable returns (Tester tester) {
+    function run(address _subject, uint256 _threshold) public payable returns (FriendGroup fg) {
         vm.startBroadcast();
-        tester = new Tester();
+        fg = new FriendGroup(_subject, _threshold);
         vm.stopBroadcast();
     }
 }

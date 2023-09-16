@@ -7,4 +7,4 @@ remappings = [
 ]
 
 [rpc_endpoints]
-mainnet = "https://rpc.ankr.com/eth"
+base = "https://rpc.ankr.com/base"

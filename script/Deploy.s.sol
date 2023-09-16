@@ -5,9 +5,9 @@ import {Script} from "@forge/Script.sol";
 import {FriendGroup} from "src/FriendGroup.sol";
 
 contract Deploy is Script {
-    /*function run(address _subject, uint256 _threshold) public payable returns (FriendGroup fg) {
+    function run() public payable returns (FriendGroup fg) {
         vm.startBroadcast();
-        fg = new FriendGroup(_subject, _threshold);
+        //fg = new FriendGroup(_subject, _threshold);
         vm.stopBroadcast();
-    }*/
+    }
 }

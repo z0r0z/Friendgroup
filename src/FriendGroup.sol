@@ -109,7 +109,7 @@ contract FriendGroup {
     /// @dev Share MGMT...
     function buyShares(address sharesSubject, uint256 amount) public payable {
         if (msg.sender != address(this) if (msg.sender != subject) revert Unauthorized();
-        FriendGroup(FT).buyShares(sharesSubject, amount);
+        FriendGroup(FT).buyShares{value: msg.value}(sharesSubject, amount);
     }
 
     function sellShares(address sharesSubject, uint256 amount) public payable {

@@ -19,7 +19,7 @@ contract FriendGroupTest is Test {
         assertEq(ft.sharesBalance(usrA, usrA), 2);
     }
 
-    function testDeployFG() public payable {
+    function testDeploy() public payable {
         new FriendGroup(address(0), usrA, 2);
     }
 

@@ -12,7 +12,7 @@ contract FriendGroupTest is Test {
 
     function setUp() public payable {
         vm.createSelectFork(vm.rpcUrl("base"));
-        fg = new FriendGroup(usrA, usrA, 2);
+        fg = new FriendGroup(2, usrA, usrA);
     }
 
     function testSharesBalance() public payable {
@@ -20,11 +20,16 @@ contract FriendGroupTest is Test {
     }
 
     function testDeploy() public payable {
-        new FriendGroup(address(0), usrA, 2);
+        new FriendGroup(2, address(0), usrA);
     }
 
     function testUpdateAdmin() public payable {
         vm.prank(usrA);
+        fg.updateAdmin(usrB);
+    }
+
+    function testFailUnauthUpdateAdmin() public payable {
+        vm.prank(usrB);
         fg.updateAdmin(usrB);
     }
 }

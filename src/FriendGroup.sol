@@ -8,10 +8,15 @@ contract FriendGroup {
     event ThreshUpdated(uint256 indexed thresh);
     event AdminUpdated(address indexed admin);
 
-    error InvalidSignature();
     error InvalidThreshold();
+    error InvalidSignature();
     error InsufficientKeys();
     error Unauthorized();
+
+    enum Op {
+        call,
+        delegatecall
+    }
 
     struct Sig {
         address usr;
@@ -37,19 +42,19 @@ contract FriendGroup {
     mapping(address => uint256) public sharesSupply;
 
     // Constructor...
-    constructor(address _admin, address _subject, uint256 _thresh) payable {
-        if (_thresh > 100) revert InvalidThreshold();
+    constructor(uint256 _thresh, address _admin, address _subject) payable {
+        if (_thresh > 100 || _thresh == 0) revert InvalidThreshold();
+        if (_admin != address(0)) admin = _admin;
         if (_subject == address(0)) {
             ft.buyShares(address(this), 1);
             _subject = address(this);
         }
-        if (_admin != address(0)) admin = _admin;
         subject = _subject;
         thresh = _thresh;
     }
 
     // Execute Keyholder Ops...
-    function execute(address to, uint256 val, bytes memory data, bool call, string calldata note, Sig[] calldata sigs)
+    function execute(address to, uint256 val, bytes memory data, Op op, string calldata note, Sig[] calldata sigs)
         public
         payable
     {
@@ -58,13 +63,13 @@ contract FriendGroup {
                 "\x19\x01",
                 domainSeparator,
                 keccak256(
-                    abi.encodePacked(
-                        keccak256("Execute(address to,uint256 val,bytes data,bool call,string note"),
+                    abi.encode(
+                        keccak256("Execute(address to,uint256 val,bytes data,uint8 op,string note"),
                         to,
                         val,
                         keccak256(data),
-                        call,
-                        note
+                        op,
+                        keccak256(bytes(note))
                     )
                 )
             )
@@ -97,13 +102,13 @@ contract FriendGroup {
 
         emit Executed(to, val, data, note);
 
-        execute(to, val, data, call);
+        execute(to, val, data, op);
     }
 
     // Execute Keyholder Ops...
-    function execute(address to, uint256 val, bytes memory data, bool call) public payable {
+    function execute(address to, uint256 val, bytes memory data, Op op) public payable {
         _auth();
-        if (call) {
+        if (op == Op.call) {
             assembly {
                 let success := call(gas(), to, val, add(data, 0x20), mload(data), gas(), 0x00)
                 returndatacopy(0x00, 0x00, returndatasize())
@@ -141,7 +146,7 @@ contract FriendGroup {
     // Threshold Setting...
     function updateThreshold(uint256 _thresh) public payable {
         _auth();
-        if (_thresh > 100) revert InvalidThreshold();
+        if (_thresh > 100 || _thresh == 0) revert InvalidThreshold();
         thresh = _thresh;
         emit ThreshUpdated(_thresh);
     }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 contract FriendGroup {
     event Executed(address indexed to, uint256 val, bytes data, string note);
+    event AdminUpdated(address indexed admin);
     event ThresholdUpdated(uint256 indexed threshold);
 
     error InvalidSignature();
@@ -30,12 +31,13 @@ contract FriendGroup {
     );
 
     /// @dev Constructor...
-    constructor(address _subject, uint256 _threshold) payable {
+    constructor(address _admin, address _subject, uint256 _threshold) payable {
         if (_threshold > 100) revert InvalidThreshold();
         if (_subject == address(0)) {
             FriendGroup(FT).buyShares(address(this), 1);
             _subject = address(this);
         }
+        admin = _admin;
         subject = _subject;
         threshold = _threshold;
     }
@@ -89,7 +91,16 @@ contract FriendGroup {
 
         emit Executed(to, val, data, note);
 
-        if (call) {
+        execute(to, val, data, call);
+    }
+
+    /// @dev Execute Keyholder Ops...
+    function execute(address to, uint256 val, bytes memory data, bool call)
+        public
+        payable
+    {
+         if (msg.sender != address(this) || msg.sender != admin) revert Unauthorized();
+         if (call) {
             assembly {
                 let success := call(gas(), to, val, add(data, 0x20), mload(data), gas(), 0x00)
                 returndatacopy(0x00, 0x00, returndatasize())
@@ -115,6 +126,13 @@ contract FriendGroup {
     function sellShares(address sharesSubject, uint256 amount) public payable {
         if (msg.sender != address(this) if (msg.sender != subject) revert Unauthorized();
         FriendGroup(FT).sellShares(sharesSubject, amount);
+    }
+
+    /// @dev Admin Setting...
+    function updateAdmin(address _admin) public payable {
+        if (msg.sender != address(this) || msg.sender != admin) revert Unauthorized();
+        admin = _admin;
+        emit AdminUpdated(_admin);
     }
 
     /// @dev Threshold Setting...

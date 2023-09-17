@@ -84,7 +84,7 @@ contract FriendGroup {
         }
 
         unchecked {
-            if (tally < threshold * FT.sharesSupply(subject) / 100) revert InsufficientKeys();
+            if (tally < (threshold * FT.sharesSupply(subject) / 100)) revert InsufficientKeys();
         }
 
         emit Executed(to, val, data, note);

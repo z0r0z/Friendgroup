@@ -64,7 +64,7 @@ contract FriendGroup {
                 domainSeparator,
                 keccak256(
                     abi.encode(
-                        keccak256("Execute(address to,uint256 val,bytes data,uint8 op,string note"),
+                        keccak256("Execute(address to,uint256 val,bytes data,uint8 op,string note)"),
                         to,
                         val,
                         keccak256(data),
@@ -102,7 +102,7 @@ contract FriendGroup {
 
         emit Executed(to, val, data, note);
 
-        execute(to, val, data, op);
+        //execute(to, val, data, op);
     }
 
     // Execute Keyholder Ops...

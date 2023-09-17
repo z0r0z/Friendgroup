@@ -2,13 +2,11 @@
 solc = "0.8.19"
 optimizer = true
 optimizer_runs = 9_999_999
+via_ir = true
 
 remappings = [
   "@forge=lib/forge-std/src/"
 ]
-
-[profile.via-ir]
-via_ir = true
 
 [rpc_endpoints]
 base = "https://rpc.ankr.com/base"

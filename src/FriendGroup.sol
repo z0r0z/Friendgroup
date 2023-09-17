@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.19;
 
+FriendGroup constant ft = FriendGroup(payable(0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4));
+
 contract FriendGroup {
     event Executed(address indexed to, uint256 val, bytes data, string note);
+    event ThreshUpdated(uint256 indexed thresh);
     event AdminUpdated(address indexed admin);
-    event ThresholdUpdated(uint256 indexed threshold);
 
     error InvalidSignature();
     error InvalidThreshold();
@@ -18,7 +20,8 @@ contract FriendGroup {
         bytes32 s;
     }
 
-    uint256 public threshold;
+    uint96 public thresh;
+    address public admin;
     address public immutable subject;
     bytes32 immutable domainSeparator = keccak256(
         abi.encode(
@@ -30,19 +33,22 @@ contract FriendGroup {
         )
     );
 
-    /// @dev Constructor...
-    constructor(address _admin, address _subject, uint256 _threshold) payable {
-        if (_threshold > 100) revert InvalidThreshold();
+    mapping(address => mapping(address => uint256)) public sharesBalance;
+    mapping(address => uint256) public sharesSupply;
+
+    // Constructor...
+    constructor(address _admin, address _subject, uint256 _thresh) payable {
+        if (_thresh > 100) revert InvalidThreshold();
         if (_subject == address(0)) {
-            FriendGroup(FT).buyShares(address(this), 1);
+            ft.buyShares(address(this), 1);
             _subject = address(this);
         }
-        admin = _admin;
+        if (_admin != address(0)) admin = _admin;
         subject = _subject;
-        threshold = _threshold;
+        thresh = uint96(_thresh);
     }
 
-    /// @dev Execute Keyholder Ops...
+    // Execute Keyholder Ops...
     function execute(address to, uint256 val, bytes memory data, bool call, string calldata note, Sig[] calldata sigs)
         public
         payable
@@ -80,13 +86,13 @@ contract FriendGroup {
             }
 
             unchecked {
-                tally += FT.sharesBalance(subject, usr);
+                tally += ft.sharesBalance(subject, usr);
                 ++i;
             }
         }
 
         unchecked {
-            if (tally < (threshold * FT.sharesSupply(subject) / 100)) revert InsufficientKeys();
+            if (tally < (thresh * ft.sharesSupply(subject) / 100)) revert InsufficientKeys();
         }
 
         emit Executed(to, val, data, note);
@@ -94,13 +100,10 @@ contract FriendGroup {
         execute(to, val, data, call);
     }
 
-    /// @dev Execute Keyholder Ops...
-    function execute(address to, uint256 val, bytes memory data, bool call)
-        public
-        payable
-    {
-         if (msg.sender != address(this) || msg.sender != admin) revert Unauthorized();
-         if (call) {
+    // Execute Keyholder Ops...
+    function execute(address to, uint256 val, bytes memory data, bool call) public payable {
+        _auth();
+        if (call) {
             assembly {
                 let success := call(gas(), to, val, add(data, 0x20), mload(data), gas(), 0x00)
                 returndatacopy(0x00, 0x00, returndatasize())
@@ -117,33 +120,33 @@ contract FriendGroup {
         }
     }
 
-    /// @dev Share MGMT...
+    // Share MGMT...
     function buyShares(address sharesSubject, uint256 amount) public payable {
-        if (msg.sender != address(this) if (msg.sender != subject) revert Unauthorized();
-        FriendGroup(FT).buyShares{value: msg.value}(sharesSubject, amount);
+        _auth();
+        ft.buyShares{value: msg.value}(sharesSubject, amount);
     }
 
     function sellShares(address sharesSubject, uint256 amount) public payable {
-        if (msg.sender != address(this) if (msg.sender != subject) revert Unauthorized();
-        FriendGroup(FT).sellShares(sharesSubject, amount);
+        _auth();
+        ft.sellShares(sharesSubject, amount);
     }
 
-    /// @dev Admin Setting...
+    // Admin Setting...
     function updateAdmin(address _admin) public payable {
-        if (msg.sender != address(this) || msg.sender != admin) revert Unauthorized();
+        _auth();
         admin = _admin;
         emit AdminUpdated(_admin);
     }
 
-    /// @dev Threshold Setting...
-    function updateThreshold(uint256 _threshold) public payable {
-        if (_threshold > 100) revert InvalidThreshold();
-        if (msg.sender != address(this)) revert Unauthorized();
-        threshold = _threshold;
-        emit ThresholdUpdated(_threshold);
+    // Threshold Setting...
+    function updateThreshold(uint256 _thresh) public payable {
+        _auth();
+        if (_thresh > 100) revert InvalidThreshold();
+        thresh = uint96(_thresh);
+        emit ThreshUpdated(_thresh);
     }
 
-    /// @dev Receivers...
+    // Receivers...
     receive() external payable {}
 
     function onERC721Received(address, address, uint256, bytes calldata) public payable returns (bytes4) {
@@ -162,13 +165,13 @@ contract FriendGroup {
         return this.onERC1155BatchReceived.selector;
     }
 
-    /// @dev eip-165...
+    // eip-165...
     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
         return interfaceId == this.supportsInterface.selector || interfaceId == this.onERC721Received.selector
             || interfaceId == this.onERC1155Received.selector || interfaceId == this.onERC1155BatchReceived.selector;
     }
 
-    /// @dev eip-5267...
+    // eip-5267...
     function eip712Domain()
         public
         view
@@ -189,15 +192,16 @@ contract FriendGroup {
         salt = salt; // `bytes32(0)`.
         extensions = extensions; // `new uint256[](0)`.
     }
-}
 
-/// @dev FriendtechSharesV1 interface.
-contract IFT {
-    mapping(address => mapping(address => uint256)) public sharesBalance;
-    mapping(address => uint256) public sharesSupply;
+    // Auth Check...
+    function _auth() internal view {
+        if (msg.sender != address(this)) {
+            if (msg.sender != admin) {
+                revert Unauthorized();
+            }
+        }
+    }
 }
-
-IFT constant FT = IFT(0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4);
 
 /// @dev Signature checking modified from Solady (License: MIT).
 /// (https://github.com/Vectorized/solady/blob/main/src/utils/SignatureCheckerLib.sol)

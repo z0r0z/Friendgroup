@@ -7,7 +7,8 @@ import {FriendGroup} from "src/FriendGroup.sol";
 contract Deploy is Script {
     function run() public payable returns (FriendGroup fg) {
         vm.startBroadcast();
-        //fg = new FriendGroup(_subject, _threshold);
+        fg;
+        //fg = new FriendGroup(address(0), _subject, _threshold);
         vm.stopBroadcast();
     }
 }

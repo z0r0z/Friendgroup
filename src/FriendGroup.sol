@@ -33,7 +33,7 @@ contract FriendGroup {
     constructor(address _subject, uint256 _threshold) payable {
         if (_threshold > 100) revert InvalidThreshold();
         if (_subject == address(0)) {
-            FriendGroup(FT).buyShares(address(this), 0);
+            FriendGroup(FT).buyShares(address(this), 1);
             _subject = address(this);
         }
         subject = _subject;

@@ -58,7 +58,6 @@ contract FriendGroup {
             )
         );
 
-        uint256 thresh = threshold * FT.sharesSupply(subject) / 100;
         Sig calldata sig;
         uint256 tally;
         address prev;
@@ -80,7 +79,9 @@ contract FriendGroup {
             }
         }
 
-        if (tally < thresh) revert InsufficientKeys();
+        unchecked {
+            if (tally < threshold * FT.sharesSupply(subject) / 100) revert InsufficientKeys();
+        }
 
         emit Executed(to, val, data, note);
 

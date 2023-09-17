@@ -32,6 +32,10 @@ contract FriendGroup {
     /// @dev Constructor...
     constructor(address _subject, uint256 _threshold) payable {
         if (_threshold > 100) revert InvalidThreshold();
+        if (_subject == address(0)) {
+            FriendGroup(FT).buyShares(address(this), 0);
+            _subject = address(this);
+        }
         subject = _subject;
         threshold = _threshold;
     }
@@ -100,6 +104,11 @@ contract FriendGroup {
                 return(0x00, returndatasize())
             }
         }
+    }
+
+    function buyShares(address sharesSubject, uint256 amount) public payable {
+        if (msg.sender != address(this) if (msg.sender != subject) revert Unauthorized();
+        FriendGroup(FT).buyShares(sharesSubject, amount);
     }
 
     /// @dev Key Threshold Setting...

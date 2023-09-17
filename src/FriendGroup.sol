@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 contract FriendGroup {
     event Executed(address indexed to, uint256 val, bytes data, string note);
+    event ThresholdUpdated(uint256 indexed threshold);
 
     error InvalidSignature();
     error InvalidThreshold();
@@ -105,6 +106,7 @@ contract FriendGroup {
         if (_threshold > 100) revert InvalidThreshold();
         if (msg.sender != address(this)) revert Unauthorized();
         threshold = _threshold;
+        emit ThresholdUpdated(_threshold);
     }
 
     /// @dev Receivers...

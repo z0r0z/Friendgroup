@@ -1,3 +1,3 @@
-FriendGroupTest:testDeploy() (gas: 1087410)
+FriendGroupTest:testDeploy() (gas: 1065512)
 FriendGroupTest:testSharesBalance() (gas: 6432)
-FriendGroupTest:testUpdateAdmin() (gas: 14950)
+FriendGroupTest:testUpdateAdmin() (gas: 14926)

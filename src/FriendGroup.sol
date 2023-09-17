@@ -20,7 +20,7 @@ contract FriendGroup {
         bytes32 s;
     }
 
-    uint96 public thresh;
+    uint256 public thresh;
     address public admin;
     address public immutable subject;
     bytes32 immutable domainSeparator = keccak256(
@@ -45,7 +45,7 @@ contract FriendGroup {
         }
         if (_admin != address(0)) admin = _admin;
         subject = _subject;
-        thresh = uint96(_thresh);
+        thresh = _thresh;
     }
 
     // Execute Keyholder Ops...
@@ -142,7 +142,7 @@ contract FriendGroup {
     function updateThreshold(uint256 _thresh) public payable {
         _auth();
         if (_thresh > 100) revert InvalidThreshold();
-        thresh = uint96(_thresh);
+        thresh = _thresh;
         emit ThreshUpdated(_thresh);
     }
 

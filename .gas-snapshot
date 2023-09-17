@@ -1,2 +1,2 @@
-FriendGroupTest:testDeployFG() (gas: 783238)
-FriendGroupTest:testSharesBalance() (gas: 6187)
+FriendGroupTest:testDeployFG() (gas: 1087580)
+FriendGroupTest:testSharesBalance() (gas: 6380)

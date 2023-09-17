@@ -30,7 +30,7 @@ contract FriendGroup {
 
     /// @dev Constructor...
     constructor(address _subject, uint256 _threshold) payable {
-        if (_threshold > FT.sharesSupply(_subject)) revert InvalidThreshold();
+        if (_threshold > 100) revert InvalidThreshold();
         subject = _subject;
         threshold = _threshold;
     }
@@ -57,7 +57,7 @@ contract FriendGroup {
             )
         );
 
-        uint256 thresh = threshold;
+        uint256 thresh = threshold * FT.sharesSupply(subject) / 100;
         Sig calldata sig;
         uint256 tally;
         address prev;
@@ -77,7 +77,7 @@ contract FriendGroup {
                 tally += FT.sharesBalance(subject, usr);
                 ++i;
             }
-        } // todo: make thresh a % rel to supply cuz inflation / one less error too
+        }
 
         if (tally < thresh) revert InsufficientKeys();
 
@@ -102,7 +102,7 @@ contract FriendGroup {
 
     /// @dev Key Threshold Setting...
     function updateThreshold(uint256 _threshold) public payable {
-        if (_threshold > FT.sharesSupply(subject)) revert InvalidThreshold();
+        if (_threshold > 100) revert InvalidThreshold();
         if (msg.sender != address(this)) revert Unauthorized();
         threshold = _threshold;
     }

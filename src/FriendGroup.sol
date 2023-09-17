@@ -106,12 +106,18 @@ contract FriendGroup {
         }
     }
 
+    /// @dev Share MGMT...
     function buyShares(address sharesSubject, uint256 amount) public payable {
         if (msg.sender != address(this) if (msg.sender != subject) revert Unauthorized();
         FriendGroup(FT).buyShares(sharesSubject, amount);
     }
 
-    /// @dev Key Threshold Setting...
+    function sellShares(address sharesSubject, uint256 amount) public payable {
+        if (msg.sender != address(this) if (msg.sender != subject) revert Unauthorized();
+        FriendGroup(FT).sellShares(sharesSubject, amount);
+    }
+
+    /// @dev Threshold Setting...
     function updateThreshold(uint256 _threshold) public payable {
         if (_threshold > 100) revert InvalidThreshold();
         if (msg.sender != address(this)) revert Unauthorized();

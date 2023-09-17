@@ -22,4 +22,9 @@ contract FriendGroupTest is Test {
     function testDeployFG() public payable {
         new FriendGroup(address(0), usrA, 2);
     }
+
+    function testUpdateAdmin() public payable {
+        vm.prank(usrA);
+        fg.updateAdmin(usrB);
+    }
 }

@@ -54,7 +54,7 @@ contract FriendGroup {
     }
 
     // Execute Keyholder Ops...
-    function execute(address to, uint256 val, bytes memory data, Op op, string calldata note, Sig[] calldata sigs)
+    function execute(address to, uint256 val, bytes calldata data, Op op, string calldata note, Sig[] calldata sigs)
         public
         payable
     {
@@ -100,14 +100,16 @@ contract FriendGroup {
             if (tally < (thresh * ft.sharesSupply(subject) / 100)) revert InsufficientKeys();
         }
 
-        emit Executed(to, val, data, note);
-
-        //execute(to, val, data, op);
+        _execute(to, val, data, op);
     }
 
-    // Execute Keyholder Ops...
-    function execute(address to, uint256 val, bytes memory data, Op op) public payable {
+    function relay(address to, uint256 val, bytes calldata data, Op op) public payable {
         _auth();
+        _execute(to, val, data, op);
+    }
+        
+    function _execute(address to, uint256 val, bytes memory data, Op op) internal {
+        emit Executed(to, val, data, note);
         if (op == Op.call) {
             assembly {
                 let success := call(gas(), to, val, add(data, 0x20), mload(data), gas(), 0x00)

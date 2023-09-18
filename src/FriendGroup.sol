@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 contract FriendGroup {
     event Executed(address indexed to, uint256 val, bytes data, uint256 indexed nonce);
     event Transfer(address indexed from, address indexed to, uint256 amt);
+    event ValidatorUpdated(address indexed validator);
     event ThreshUpdated(uint256 indexed thresh);
     event AdminUpdated(address indexed admin);
 
@@ -27,6 +28,7 @@ contract FriendGroup {
     uint48 public nonce;
     uint48 public thresh;
     address public admin;
+    address public validator;
     address public immutable subject;
     bytes32 immutable domainSeparator = keccak256(
         abi.encode(
@@ -39,19 +41,20 @@ contract FriendGroup {
     );
 
     // Quasi-eip-20...
-    mapping(address => uint256) public balanceOf;
+    mapping(address usr => uint256 bal) public balanceOf;
     uint256 public totalSupply;
 
     // Constructor...
-    constructor(uint256 _thresh, address _admin, address _subject) payable {
+    constructor(uint256 _thresh, address _admin, address _validator, address _subject) payable {
         if (_thresh > 100 || _thresh == 0) revert InvalidThreshold();
         if (_admin != address(0)) admin = _admin;
+        if (_validator != address(0)) validator = _validator;
         if (_subject == address(0)) {
             ft.buyShares(address(this), 1);
             _subject = address(this);
         }
-        subject = _subject;
         thresh = uint48(_thresh);
+        subject = _subject;
     }
 
     // Execute Keyholder Ops...
@@ -167,6 +170,13 @@ contract FriendGroup {
         emit ThreshUpdated(_thresh);
     }
 
+    // Validator Setting...
+    function updateValidator(address _validator) public payable {
+        _auth();
+        validator = _validator;
+        emit ValidatorUpdated(_validator);
+    }
+
     // Receivers...
     receive() external payable {}
 
@@ -190,6 +200,39 @@ contract FriendGroup {
     function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
         return interfaceId == this.supportsInterface.selector || interfaceId == this.onERC721Received.selector
             || interfaceId == this.onERC1155Received.selector || interfaceId == this.onERC1155BatchReceived.selector;
+    }
+
+    // eip-1271...
+    function isValidSignature(bytes32 hash, bytes memory sig) public view returns (bytes4) {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := mload(add(sig, 0x20))
+            s := mload(add(sig, 0x40))
+            v := byte(0x00, mload(add(sig, 0x60)))
+        }
+
+        if (isValidSignatureNow(admin, hash, v, r, s)) {
+            return 0x1626ba7e;
+        } else {
+            return 0xffffffff;
+        }
+    }
+
+    // eip-4337...
+    function validateUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+        public
+        payable
+        returns (uint256 validationData)
+    {
+        if (msg.sender != entryPoint) revert Unauthorized();
+        validationData = FriendGroup(payable(validator)).validateUserOp(userOp, userOpHash, missingAccountFunds);
+        if (missingAccountFunds != 0) {
+            assembly {
+                pop(call(gas(), caller(), missingAccountFunds, 0x00, 0x00, 0x00, 0x00))
+            }
+        }
     }
 
     // eip-5267...
@@ -217,8 +260,10 @@ contract FriendGroup {
     // Auth Check...
     function _auth() internal view {
         if (msg.sender != address(this)) {
-            if (msg.sender != admin) {
-                revert Unauthorized();
+            if (msg.sender != entryPoint) {
+                if (msg.sender != admin) {
+                    revert Unauthorized();
+                }
             }
         }
     }
@@ -230,6 +275,22 @@ interface IFT {
     function sharesBalance(address sharesSubject, address holder) external view returns (uint256);
     function sharesSupply(address sharesSubject) external view returns (uint256);
     function buyShares(address sharesSubject, uint256 amount) external payable;
+}
+
+address constant entryPoint = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
+
+struct UserOperation {
+    address sender;
+    uint256 nonce;
+    bytes initCode;
+    bytes callData;
+    uint256 callGasLimit;
+    uint256 verificationGasLimit;
+    uint256 preVerificationGas;
+    uint256 maxFeePerGas;
+    uint256 maxPriorityFeePerGas;
+    bytes paymasterAndData;
+    bytes signature;
 }
 
 /// @dev Signature checking modified from Solady (License: MIT).

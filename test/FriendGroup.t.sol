@@ -32,7 +32,7 @@ contract FriendGroupTest is Test {
 
     function setUp() public payable {
         vm.createSelectFork(vm.rpcUrl("base"));
-        fg = new FriendGroup(51, usrA, usrA);
+        fg = new FriendGroup(51, usrA, address(0), usrA);
         vm.prank(0xdd9176eA3E7559D6B68b537eF555D3e89403f742);
         payable(alice).transfer(100 ether);
         vm.prank(alice);
@@ -47,27 +47,53 @@ contract FriendGroupTest is Test {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    function testInvalidThreshold() public payable {
+        try new FriendGroup(0, address(0), address(0), usrA) {
+            fail();
+        } catch {
+            // expected to revert
+        }
+        try new FriendGroup(101, address(0), address(0), usrA) {
+            fail();
+        } catch {
+            // expected to revert
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     function testDeploy() public payable {
-        new FriendGroup(51, address(0), usrA);
+        new FriendGroup(51, address(0), address(0), usrA);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     function testExecute() public payable {
-        // Ensure Alice has sufficient shares to meet the threshold
-        // This would be part of your setup or another test function
-        // For example: ft.buyShares(usrA, amountNeeded);
-
         FriendGroup.Sig[] memory sigs = new FriendGroup.Sig[](1);
 
-        // Generate the signature for Alice
         (uint8 v, bytes32 r, bytes32 s) = signExecution(alicePk, usrB, 0, "", Op.call);
 
-        // Populate the signatures array
         sigs[0] = FriendGroup.Sig({usr: alice, v: v, r: r, s: s});
 
-        // Execute the function
         fg.execute(usrB, 0, "", FriendGroup.Op.call, sigs);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    function testFailInsufficientVote() public payable {
+        FriendGroup.Sig[] memory sigs = new FriendGroup.Sig[](1);
+
+        // Let's assume Alice has insufficient shares to meet the threshold.
+        (uint8 v, bytes32 r, bytes32 s) = signExecution(alicePk, usrB, 0, "", Op.call);
+
+        sigs[0] = FriendGroup.Sig({usr: alice, v: v, r: r, s: s});
+
+        // This should fail as Alice's shares should be insufficient to meet the threshold.
+        try fg.execute(usrB, 0, "", FriendGroup.Op.call, sigs) {
+            fail();
+        } catch (bytes memory) {
+            // Expected to revert
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -75,11 +101,48 @@ contract FriendGroupTest is Test {
     function testUpdateAdmin() public payable {
         vm.prank(usrA);
         fg.updateAdmin(usrB);
+        assertEq(fg.admin(), usrB);
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     function testFailUnauthUpdateAdmin() public payable {
-        vm.prank(usrB);
+        vm.prank(usrB); // Switch to an unauthorized user
         fg.updateAdmin(usrB);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    function testUpdateThreshold() public payable {
+        vm.prank(usrA);
+        fg.updateThreshold(60);
+        assertEq(fg.thresh(), 60);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    function testFailUpdateThreshold() public payable {
+        vm.prank(usrB); // Switch to an unauthorized user
+        fg.updateThreshold(60);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    function testMint() public payable {
+        vm.prank(usrA);
+        fg.mint(usrA, 100);
+        assertEq(fg.balanceOf(usrA), 100);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    function testBurn() public payable {
+        // Make sure usrA is authorized to burn tokens and has some tokens to burn
+        vm.prank(usrA); // Switch to usrA
+        fg.mint(usrA, 100); // Mint some tokens first
+        vm.prank(usrA);
+        fg.burn(usrA, 50); // Then burn
+        assertEq(fg.balanceOf(usrA), 50); // Check if burn was successful
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -92,6 +155,8 @@ contract FriendGroupTest is Test {
         (v, r, s) = vm.sign(pk, getDigest(to, val, data, op, computeDomainSeparator(address(fg))));
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     function computeDomainSeparator(address addr) internal view returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -103,6 +168,8 @@ contract FriendGroupTest is Test {
             )
         );
     }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     function getDigest(address to, uint256 val, bytes memory data, Op op, bytes32 domainSeparator)
         internal

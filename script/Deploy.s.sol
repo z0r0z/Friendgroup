@@ -8,7 +8,7 @@ contract Deploy is Script {
     function run() public payable returns (FriendGroup fg) {
         vm.startBroadcast();
         fg;
-        //fg = new FriendGroup(_threshold, address(0), _subject);
+        //fg = new FriendGroup(_threshold, address(0), address(0), _subject);
         vm.stopBroadcast();
     }
 }

@@ -9,7 +9,7 @@ contract FriendGroup {
 
     error InvalidThreshold();
     error InvalidSignature();
-    error InsufficientKeys();
+    error InsufficientVote();
     error Unauthorized();
 
     enum Op {
@@ -100,7 +100,7 @@ contract FriendGroup {
         }
 
         unchecked {
-            if (tally < (thresh * ft.sharesSupply(subject) / 100)) revert InsufficientKeys();
+            if (tally < (thresh * ft.sharesSupply(subject) / 100)) revert InsufficientVote();
         }
 
         _execute(to, val, data, op);
@@ -129,7 +129,7 @@ contract FriendGroup {
         }
     }
 
-    // Share MGMT...
+    // Token MGMT...
     function mint(address to, uint256 amt) public payable {
         _auth();
         totalSupply += amt;
@@ -230,7 +230,6 @@ interface IFT {
     function sharesBalance(address sharesSubject, address holder) external view returns (uint256);
     function sharesSupply(address sharesSubject) external view returns (uint256);
     function buyShares(address sharesSubject, uint256 amount) external payable;
-    function sellShares(address sharesSubject, uint256 amount) external payable;
 }
 
 /// @dev Signature checking modified from Solady (License: MIT).

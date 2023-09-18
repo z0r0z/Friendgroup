@@ -24,9 +24,6 @@ contract FriendGroup {
         bytes32 s;
     }
 
-    mapping(address => uint256) public balanceOf;
-    uint256 public totalSupply;
-
     uint48 public nonce;
     uint48 public thresh;
     address public admin;
@@ -40,6 +37,10 @@ contract FriendGroup {
             address(this)
         )
     );
+
+    // Quasi-eip-20...
+    mapping(address => uint256) public balanceOf;
+    uint256 public totalSupply;
 
     // Constructor...
     constructor(uint256 _thresh, address _admin, address _subject) payable {

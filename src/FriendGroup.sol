@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.19;
 
-FriendGroup constant ft = FriendGroup(payable(0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4));
-
 contract FriendGroup {
     event Executed(address indexed to, uint256 val, bytes data, uint256 indexed nonce);
+    event Transfer(address indexed from, address indexed to, uint256 amt);
     event ThreshUpdated(uint256 indexed thresh);
     event AdminUpdated(address indexed admin);
 
@@ -25,8 +24,11 @@ contract FriendGroup {
         bytes32 s;
     }
 
-    uint256 public nonce;
-    uint256 public thresh;
+    mapping(address => uint256) public balanceOf;
+    uint256 public totalSupply;
+
+    uint48 public nonce;
+    uint48 public thresh;
     address public admin;
     address public immutable subject;
     bytes32 immutable domainSeparator = keccak256(
@@ -39,9 +41,6 @@ contract FriendGroup {
         )
     );
 
-    mapping(address => mapping(address => uint256)) public sharesBalance;
-    mapping(address => uint256) public sharesSupply;
-
     // Constructor...
     constructor(uint256 _thresh, address _admin, address _subject) payable {
         if (_thresh > 100 || _thresh == 0) revert InvalidThreshold();
@@ -51,7 +50,7 @@ contract FriendGroup {
             _subject = address(this);
         }
         subject = _subject;
-        thresh = _thresh;
+        thresh = uint48(_thresh);
     }
 
     // Execute Keyholder Ops...
@@ -130,14 +129,26 @@ contract FriendGroup {
     }
 
     // Share MGMT...
-    function buyShares(address sharesSubject, uint256 amount) public payable {
+    function mint(address to, uint256 amt) public payable {
         _auth();
-        ft.buyShares{value: msg.value}(sharesSubject, amount);
+        totalSupply += amt;
+
+        unchecked {
+            balanceOf[to] += amt;
+        }
+
+        emit Transfer(address(0), to, amt);
     }
 
-    function sellShares(address sharesSubject, uint256 amount) public payable {
+    function burn(address from, uint256 amt) public payable {
         _auth();
-        ft.sellShares(sharesSubject, amount);
+        balanceOf[from] -= amt;
+
+        unchecked {
+            totalSupply -= amt;
+        }
+
+        emit Transfer(from, address(0), amt);
     }
 
     // Admin Setting...
@@ -151,7 +162,7 @@ contract FriendGroup {
     function updateThreshold(uint256 _thresh) public payable {
         _auth();
         if (_thresh > 100 || _thresh == 0) revert InvalidThreshold();
-        thresh = _thresh;
+        thresh = uint48(_thresh);
         emit ThreshUpdated(_thresh);
     }
 
@@ -210,6 +221,15 @@ contract FriendGroup {
             }
         }
     }
+}
+
+IFT constant ft = IFT(0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4);
+
+interface IFT {
+    function sharesBalance(address sharesSubject, address holder) external view returns (uint256);
+    function sharesSupply(address sharesSubject) external view returns (uint256);
+    function buyShares(address sharesSubject, uint256 amount) external payable;
+    function sellShares(address sharesSubject, uint256 amount) external payable;
 }
 
 /// @dev Signature checking modified from Solady (License: MIT).

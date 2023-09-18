@@ -61,13 +61,13 @@ contract FriendGroupTest is Test {
         FriendGroup.Sig[] memory sigs = new FriendGroup.Sig[](1);
 
         // Generate the signature for Alice
-        (uint8 v, bytes32 r, bytes32 s) = signExecution(alicePk, usrB, 0, "", Op.call, "test");
+        (uint8 v, bytes32 r, bytes32 s) = signExecution(alicePk, usrB, 0, "", Op.call);
 
         // Populate the signatures array
         sigs[0] = FriendGroup.Sig({usr: alice, v: v, r: r, s: s});
 
         // Execute the function
-        fg.execute(usrB, 0, "", FriendGroup.Op.call, "test", sigs);
+        fg.execute(usrB, 0, "", FriendGroup.Op.call, sigs);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -84,12 +84,12 @@ contract FriendGroupTest is Test {
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    function signExecution(uint256 pk, address to, uint256 val, bytes memory data, Op op, string memory note)
+    function signExecution(uint256 pk, address to, uint256 val, bytes memory data, Op op)
         internal
         view
         returns (uint8 v, bytes32 r, bytes32 s)
     {
-        (v, r, s) = vm.sign(pk, getDigest(to, val, data, op, note, computeDomainSeparator(address(fg))));
+        (v, r, s) = vm.sign(pk, getDigest(to, val, data, op, computeDomainSeparator(address(fg))));
     }
 
     function computeDomainSeparator(address addr) internal view returns (bytes32) {
@@ -104,7 +104,7 @@ contract FriendGroupTest is Test {
         );
     }
 
-    function getDigest(address to, uint256 val, bytes memory data, Op op, string memory note, bytes32 domainSeparator)
+    function getDigest(address to, uint256 val, bytes memory data, Op op, bytes32 domainSeparator)
         internal
         pure
         returns (bytes32)
@@ -115,12 +115,12 @@ contract FriendGroupTest is Test {
                 domainSeparator,
                 keccak256(
                     abi.encode(
-                        keccak256("Execute(address to,uint256 val,bytes data,uint8 op,string note)"),
+                        keccak256("Execute(address to,uint256 val,bytes data,uint8 op,uint256 nonce)"),
                         to,
                         val,
                         keccak256(data),
                         op,
-                        keccak256(bytes(note))
+                        0
                     )
                 )
             )

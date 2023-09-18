@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 FriendGroup constant ft = FriendGroup(payable(0xCF205808Ed36593aa40a44F10c7f7C2F67d4A4d4));
 
 contract FriendGroup {
-    event Executed(address indexed to, uint256 val, bytes data, string note);
+    event Executed(address indexed to, uint256 val, bytes data, uint256 indexed nonce);
     event ThreshUpdated(uint256 indexed thresh);
     event AdminUpdated(address indexed admin);
 
@@ -25,6 +25,7 @@ contract FriendGroup {
         bytes32 s;
     }
 
+    uint256 public nonce;
     uint256 public thresh;
     address public admin;
     address public immutable subject;
@@ -54,22 +55,24 @@ contract FriendGroup {
     }
 
     // Execute Keyholder Ops...
-    function execute(address to, uint256 val, bytes calldata data, Op op, string calldata note, Sig[] calldata sigs)
-        public
-        payable
-    {
+    function execute(address to, uint256 val, bytes calldata data, Op op, Sig[] calldata sigs) public payable {
+        uint256 txNonce;
+        unchecked {
+            emit Executed(to, val, data, txNonce = nonce++);
+        }
+
         bytes32 hash = keccak256(
             abi.encodePacked(
                 "\x19\x01",
                 domainSeparator,
                 keccak256(
                     abi.encode(
-                        keccak256("Execute(address to,uint256 val,bytes data,uint8 op,string note)"),
+                        keccak256("Execute(address to,uint256 val,bytes data,uint8 op,uint256 nonce)"),
                         to,
                         val,
                         keccak256(data),
                         op,
-                        keccak256(bytes(note))
+                        txNonce
                     )
                 )
             )
@@ -107,9 +110,8 @@ contract FriendGroup {
         _auth();
         _execute(to, val, data, op);
     }
-        
+
     function _execute(address to, uint256 val, bytes memory data, Op op) internal {
-        emit Executed(to, val, data, note);
         if (op == Op.call) {
             assembly {
                 let success := call(gas(), to, val, add(data, 0x20), mload(data), gas(), 0x00)

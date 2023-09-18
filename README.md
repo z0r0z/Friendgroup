@@ -1,11 +1,13 @@
-# zenplate [![tests](https://github.com/z0r0z/zenplate/actions/workflows/ci.yml/badge.svg?label=tests)](https://github.com/z0r0z/zenplate/actions/workflows/ci.yml) [![License: AGPL-3.0-only][license-badge]][license] ![solidity](https://img.shields.io/badge/solidity-%5E0.8.19-black) [![Foundry][foundry-badge]][foundry]
+# FriendGroup [![tests](https://github.com/z0r0z/zenplate/actions/workflows/ci.yml/badge.svg?label=tests)](https://github.com/z0r0z/zenplate/actions/workflows/ci.yml) [![License: AGPL-3.0-only][license-badge]][license] ![solidity](https://img.shields.io/badge/solidity-%5E0.8.19-black) [![Foundry][foundry-badge]][foundry]
 
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 [license]: https://opensource.org/license/agpl-v3/
 [license-badge]: https://img.shields.io/badge/License-AGPL-black.svg
 
-A very simple foundry template for optimal contract testing.
+Friendtech Groups to co-manage assets and do things. Built on Base Layer 2 for Ethereum.
+
+Factory: [0x7fcbc6a9c10bcd00fb479fb98124307cbb916aa6](https://basescan.org/address/0x7fcbc6a9c10bcd00fb479fb98124307cbb916aa6#code)
 
 ## Getting Started
 
